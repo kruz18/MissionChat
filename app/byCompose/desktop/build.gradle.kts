@@ -33,6 +33,9 @@ kotlin {
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
 
+            //napier logger
+            implementation(libs.napier)
+
             //compose
             implementation(compose.runtime)
             implementation(compose.foundation)

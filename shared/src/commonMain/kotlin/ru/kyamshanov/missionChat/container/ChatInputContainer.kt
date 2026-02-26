@@ -3,6 +3,7 @@ package ru.kyamshanov.missionChat.container
 import pro.respawn.flowmvi.api.Container
 import pro.respawn.flowmvi.dsl.store
 import pro.respawn.flowmvi.dsl.updateStateImmediate
+import pro.respawn.flowmvi.plugins.recover
 import pro.respawn.flowmvi.plugins.reduce
 import ru.kyamshanov.missionChat.contranct.ChatInputAction
 import ru.kyamshanov.missionChat.contranct.ChatInputIntent
@@ -18,6 +19,10 @@ internal class ChatInputContainer(
             name = ""
         }
 
+        recover {
+            it.printStackTrace()
+            null
+        }
         reduce { intent ->
             when (intent) {
                 is ChatInputIntent.ChangeInputValue -> {

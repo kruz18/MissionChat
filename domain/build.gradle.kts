@@ -1,11 +1,16 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
+import java.io.FileInputStream
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlinSerialization)
+    alias(libs.plugins.buildkonfig)
 }
+
 
 kotlin {
     applyDefaultHierarchyTemplate()
@@ -19,17 +24,25 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            //domain module
-            implementation(projects.domain)
-            //decompose
-            implementation(libs.decompose)
-            implementation(libs.bundles.flowmvi.common)
+            implementation(libs.kotlinx.serialization.core)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.negotiation)
+            implementation(libs.ktor.client.serialization)
+            implementation(libs.ktor.client.logging)
+            implementation(libs.napier)
+
+            //koin
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
         }
 
         androidMain.dependencies {
             implementation(libs.koin.android)
+            implementation(libs.ktor.client.okhttp)
+        }
+
+        jvmMain.dependencies {
+            implementation(libs.ktor.client.okhttp)
         }
 
         commonTest.dependencies {
@@ -47,5 +60,25 @@ android {
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
+    }
+    buildFeatures {
+        buildConfig = true
+    }
+}
+
+val localProperties = Properties().apply {
+    val propsFile = rootProject.file("local.properties")
+    if (propsFile.exists()) {
+        load(FileInputStream(propsFile))
+    }
+}
+
+buildkonfig {
+    packageName = "ru.kyamshanov.missionChat.config"
+
+    defaultConfigs {
+        val deepseekApiKey = localProperties["deepseek.apiKey"]?.toString().orEmpty()
+
+        buildConfigField(STRING, "DEEPSEEEK_API_KEY", deepseekApiKey)
     }
 }

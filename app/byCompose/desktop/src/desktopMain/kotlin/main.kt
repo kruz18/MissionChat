@@ -4,6 +4,8 @@ import androidx.compose.ui.window.rememberWindowState
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.decompose.extensions.compose.lifecycle.LifecycleController
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
+import io.github.aakira.napier.DebugAntilog
+import io.github.aakira.napier.Napier
 import org.jetbrains.compose.resources.painterResource
 import missionchat.app.bycompose.desktop.generated.resources.Res
 import missionchat.app.bycompose.desktop.generated.resources.app_icon
@@ -14,6 +16,7 @@ import ru.kyamshanov.missionChat.initKoin
 
 
 fun main() {
+    Napier.base(DebugAntilog())
     val lifecycle = LifecycleRegistry()
     val root: RootComponent
     initKoin().also { koin ->

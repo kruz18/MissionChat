@@ -19,7 +19,7 @@ import ru.kyamshanov.missionChat.container.MessagesContainer
 import ru.kyamshanov.missionChat.container.WelcomeScreenContainer
 
 val sharedModule = module {
-
+    includes(networkModule)
     single<RootComponentFactory> { KoinRootComponentFactory() }
     single<ComponentFactory> { KoinComponentFactory() }
 
@@ -42,8 +42,7 @@ val sharedModule = module {
     factory<MessagesComponent> { (params: MessagesParams) ->
         DefaultMessagesComponent(
             componentContext = params.componentContext,
-            containerFactory = { MessagesContainer() },
+            containerFactory = { MessagesContainer(get()) },
         )
     }
-
 }
