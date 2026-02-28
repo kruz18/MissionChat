@@ -247,9 +247,8 @@ val onWarningLightMediumContrast = Color(0xFFFFFFFF)
 val warningContainerLightMediumContrast = Color(0xFF856A00)
 val onWarningContainerLightMediumContrast = Color(0xFFFFFFFF)
 val cosmicDeepLightMediumContrast = Color(0xFF000B45)
-val onCosmicDeepLightMediumContrast = Color(0xFFFFFFFF)
 val cosmicDeepContainerLightMediumContrast = Color(0xFF001A78)
-val onCosmicDeepContainerLightMediumContrast = Color(0xFFA1AFFF)
+val onCosmicDeepLightMediumContrast = Color(0xFFA1AFFF)
 
 val brandLightHighContrast = Color(0xFF001B86)
 val onBrandLightHighContrast = Color(0xFFFFFFFF)
@@ -319,3 +318,22 @@ val onCosmicDeepDarkHighContrast = Color(0xFF000000)
 val cosmicDeepContainerDarkHighContrast = Color(0xFFB5BFFF)
 val onCosmicDeepContainerDarkHighContrast = Color(0xFF000631)
 
+// Glassmorphism specific colors
+val glassBackgroundLight = Color(0xB3FFFFFF) // 70% белый для светлой темы
+val glassBackgroundDark = Color(0x66000000) 
+
+val glassStrokeLight = Color(0xFFFFFFFF) 
+val glassStrokeDark = Color(0x4DFFFFFF) 
+
+// Анимированный градиент
+val backgroundGradientLight = listOf(
+    Color(0xFFE1BEE7), // Светло-фиолетовый
+    Color(0xFFB3E5FC), // Светло-голубой
+    Color(0xFFF5F5F5)  // Белый/серый
+)
+
+val backgroundGradientDark = listOf(
+    Color(0xFF0D0D2B), 
+    Color(0xFF3A1C71), 
+    Color(0xFF000000)
+)

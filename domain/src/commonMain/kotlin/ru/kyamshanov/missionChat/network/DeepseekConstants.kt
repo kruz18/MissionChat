@@ -1,6 +1,6 @@
 package ru.kyamshanov.missionChat.network
 
-object DeepseekConstants {
+internal object DeepseekConstants {
     const val DEFAULT_MODEL = "deepseek-chat"
     const val DEFAULT_SYSTEM_PROMPT = "Ты — полезный ассистент."
     const val ENDPOINT_URL = "https://api.deepseek.com/chat/completions"

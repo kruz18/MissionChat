@@ -8,10 +8,14 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
 import org.koin.dsl.module
+import ru.kyamshanov.missionChat.database.AppDatabase
+import ru.kyamshanov.missionChat.database.createDatabase
+import ru.kyamshanov.missionChat.domain.ChatWindowInteractorFactory
+import ru.kyamshanov.missionChat.domain.impl.ChatWindowInteractorImpl
 import ru.kyamshanov.missionChat.network.DeepseekApi
 import ru.kyamshanov.missionChat.network.DeepseekApiImpl
 
-val networkModule = module {
+val DomainDiModule = module {
     single {
         Json {
             ignoreUnknownKeys = true
@@ -36,4 +40,13 @@ val networkModule = module {
     }
 
     single<DeepseekApi> { DeepseekApiImpl(get(), get()) }
+
+    single<ChatWindowInteractorFactory> {
+        ChatWindowInteractorFactory { ChatWindowInteractorImpl(get()) }
+    }
+}
+
+val databaseModule = module {
+    single { createDatabase(get()) }
+    single { get<AppDatabase>().messageDao() }
 }

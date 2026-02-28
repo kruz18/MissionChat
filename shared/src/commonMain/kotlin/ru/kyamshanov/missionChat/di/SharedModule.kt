@@ -19,7 +19,7 @@ import ru.kyamshanov.missionChat.container.MessagesContainer
 import ru.kyamshanov.missionChat.container.WelcomeScreenContainer
 
 val sharedModule = module {
-    includes(networkModule)
+    includes(DomainDiModule)
     single<RootComponentFactory> { KoinRootComponentFactory() }
     single<ComponentFactory> { KoinComponentFactory() }
 

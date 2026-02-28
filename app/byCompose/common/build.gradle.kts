@@ -43,6 +43,9 @@ kotlin {
             //immutable collections
             implementation(libs.kotlinx.immutable)
 
+            //compose markdown renderer
+            implementation(libs.multiplatform.markdown.renderer)
+            implementation(libs.multiplatform.markdown.renderer.material3)
 
             //compose
             implementation(compose.runtime)

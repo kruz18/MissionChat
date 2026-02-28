@@ -9,6 +9,13 @@ plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.buildkonfig)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
+}
+
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 
@@ -24,16 +31,25 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            //serialization
             implementation(libs.kotlinx.serialization.core)
+
+            //ktor
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.negotiation)
             implementation(libs.ktor.client.serialization)
             implementation(libs.ktor.client.logging)
+
+            //napier -- logger
             implementation(libs.napier)
 
             //koin
             implementation(project.dependencies.platform(libs.koin.bom))
             implementation(libs.koin.core)
+
+            //room
+            implementation(libs.androidx.room.runtime)
+            implementation(libs.androidx.sqlite.bundled)
         }
 
         androidMain.dependencies {
@@ -81,4 +97,9 @@ buildkonfig {
 
         buildConfigField(STRING, "DEEPSEEEK_API_KEY", deepseekApiKey)
     }
+}
+
+dependencies {
+    add("kspAndroid", libs.androidx.room.compiler)
+    add("kspJvm", libs.androidx.room.compiler)
 }

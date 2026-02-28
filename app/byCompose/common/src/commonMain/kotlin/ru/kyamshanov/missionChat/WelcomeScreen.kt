@@ -1,12 +1,15 @@
 package ru.kyamshanov.missionChat
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -16,248 +19,304 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.mikepenz.markdown.compose.Markdown
+import com.mikepenz.markdown.m3.Markdown
+import com.mikepenz.markdown.model.DefaultMarkdownColors
 import kotlinx.collections.immutable.ImmutableList
+import ru.kyamshanov.missionChat.components.GlassBox
 import ru.kyamshanov.missionChat.contranct.ChatInputIntent
 import ru.kyamshanov.missionChat.models.MessagesStateUI
+import ru.kyamshanov.missionChat.models.MessagesStateUI.MessageModel.MessageType.*
 import ru.kyamshanov.missionChat.models.subscribeAsUiState
 import ru.kyamshanov.missionChat.models.toUI
 
 @Composable
 fun WelcomeScreen(component: WelcomeScreenComponent, modifier: Modifier = Modifier) {
-    Surface(modifier = modifier) {
-        val modelState by component.subscribeAsUiState { it.toUI() }
+    AppTheme {
+        GlassBackground {
+            val modelState by component.subscribeAsUiState { it.toUI() }
 
-        InitialWelcomeScreen(
-            title = modelState.title,
-            messagesComponent = { component.messagesComponent },
-            chatInputComponent = { component.chatInputComponent }
-        )
+            InitialWelcomeScreen(
+                title = modelState.title,
+                messagesComponent = { component.messagesComponent },
+                chatInputComponent = { component.chatInputComponent },
+                modifier = modifier
+            )
+        }
     }
 }
-
 
 @Composable
 fun InitialWelcomeScreen(
     title: String,
     messagesComponent: () -> MessagesComponent,
     chatInputComponent: () -> ChatInputComponent,
+    modifier: Modifier = Modifier
 ) {
-    Row(modifier = Modifier.fillMaxSize().background(Color(0xFFF0F2F5))) {
-        // --- 1. Боковая панель (Sidebar) ---
-        Surface(
-            modifier = Modifier.width(260.dp).fillMaxHeight(),
-            color = Color.White,
-            tonalElevation = 1.dp
+    val textColor = if (isSystemInDarkTheme()) Color.White else Color(0xFF202124)
+    val secondaryTextColor = textColor.copy(alpha = 0.7f)
+
+    Row(modifier = modifier.fillMaxSize().padding(16.dp)) {
+        // --- 1. Левая панель ---
+        GlassBox(
+            modifier = Modifier.width(280.dp).fillMaxHeight(),
+            shape = RoundedCornerShape(24.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                // Профиль
+            Column(modifier = Modifier.padding(20.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(40.dp).clip(CircleShape).background(Color.LightGray))
+                    Box(
+                        Modifier.size(44.dp).clip(CircleShape)
+                            .background(textColor.copy(alpha = 0.1f))
+                    ) {
+                        Icon(
+                            Icons.Default.Person,
+                            null,
+                            Modifier.align(Alignment.Center),
+                            tint = textColor
+                        )
+                    }
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        Text("New Chat", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                        Text("Now Speaking...", fontSize = 12.sp, color = Color.Gray)
+                        Text(
+                            "User Name",
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 16.sp,
+                            color = textColor
+                        )
+                        Text("Online", fontSize = 12.sp, color = secondaryTextColor)
                     }
                 }
-
                 Spacer(Modifier.height(32.dp))
-
-                // Кнопки навигации
-                SidebarItem(Icons.Default.Add, "Chats", selected = true)
-                SidebarItem(Icons.Default.History, "History")
-                SidebarItem(Icons.Default.Settings, "Settings")
+                SidebarItem(
+                    Icons.AutoMirrored.Filled.Chat,
+                    "Chats",
+                    selected = true,
+                    textColor = textColor
+                )
+                SidebarItem(Icons.Default.History, "History", textColor = textColor)
+                SidebarItem(Icons.Default.Settings, "Settings", textColor = textColor)
             }
         }
 
-        // --- 2. Основная область чата ---
-        Column(modifier = Modifier.fillMaxSize()) {
-            // Header с градиентом
-            HeaderSection(title)
+        Spacer(Modifier.width(16.dp))
 
-            // Список чатов/сообщений
-            MessagesSection(messagesComponent)
-
-            // Поле ввода (нижняя панель)
-            InputSection(chatInputComponent)
+        // --- 2. Основная область ---
+        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 1000.dp)
+                    .fillMaxHeight()
+                    .align(Alignment.TopCenter)
+            ) {
+                GlassBox(
+                    modifier = Modifier.fillMaxWidth().height(70.dp),
+                    shape = RoundedCornerShape(20.dp)
+                ) {
+                    HeaderContent(title, textColor)
+                }
+                Spacer(Modifier.height(16.dp))
+                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                    MessagesSection(messagesComponent, textColor)
+                }
+                Spacer(Modifier.height(16.dp))
+                GlassBox(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    InputSectionContent(chatInputComponent, textColor)
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun ColumnScope.MessagesSection(
-    messagesComponent: () -> MessagesComponent
-) {
+private fun HeaderContent(title: String, textColor: Color) {
+    Row(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.AutoAwesome, null, tint = textColor)
+            Spacer(Modifier.width(12.dp))
+            Text(title, color = textColor, fontSize = 18.sp, fontWeight = FontWeight.Medium)
+        }
+        Row {
+            IconButton(onClick = {}) {
+                Icon(
+                    Icons.Default.Search,
+                    null,
+                    tint = textColor.copy(alpha = 0.8f)
+                )
+            }
+            IconButton(onClick = {}) {
+                Icon(
+                    Icons.Default.MoreVert,
+                    null,
+                    tint = textColor.copy(alpha = 0.8f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MessagesSection(messagesComponent: () -> MessagesComponent, textColor: Color) {
     val component = remember { messagesComponent() }
     val state by component.subscribeAsUiState { it.toUI() }
-
     when (val model = state) {
-        is MessagesStateUI.Error -> TODO()
         is MessagesStateUI.Loaded -> {
-            LoadedMessages(model.messages)
-        }
-
-        MessagesStateUI.Loading -> TODO()
-    }
-
-}
-
-@Composable
-private fun ColumnScope.LoadedMessages(
-    messages: ImmutableList<MessagesStateUI.MessageModel>
-) {
-    Box(modifier = Modifier.weight(1f).padding(horizontal = 24.dp)) {
-        LazyColumn(
-            contentPadding = PaddingValues(vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(messages, key = { it.title }) { message ->
-                ChatCard(
-                    chat = ChatInfo(
-                        title = message.title,
-                        lastMessage = message.text,
-                        date = message.date,
-                        icon = Icons.Default.ChatBubbleOutline
-                    )
-                )
-            }
-        }
-    }
-}
-
-
-@Composable
-fun HeaderSection(title: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(80.dp)
-            .background(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(Color(0xFF1A365D), Color(0xFF2B6CB0))
-                )
-            )
-            .padding(horizontal = 24.dp),
-        contentAlignment = Alignment.CenterStart
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Face, contentDescription = null, tint = Color.White)
-                Spacer(Modifier.width(12.dp))
-                Text(title, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            }
-            Row {
-                IconButton(onClick = {}) { Icon(Icons.Default.Search, null, tint = Color.White) }
-                IconButton(onClick = {}) { Icon(Icons.Default.MoreVert, null, tint = Color.White) }
-            }
-        }
-    }
-}
-
-@Composable
-fun ChatCard(chat: ChatInfo) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier.size(48.dp).clip(CircleShape).background(Color(0xFF0052D4)),
-                contentAlignment = Alignment.Center
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Bottom),
+                reverseLayout = true,
             ) {
-                Icon(chat.icon, contentDescription = null, tint = Color.White)
+                items(model.messages.asReversed(), key = { it.id }) {
+                    val icon: ImageVector
+                    val iconDescription: String
+                    when (it.messageType) {
+                        Human -> {
+                            icon = Icons.Default.Person
+                            iconDescription = "Human"
+                        }
+
+                        AI_ASSISTANT -> {
+                            icon = Icons.AutoMirrored.Filled.Chat
+                            iconDescription = "AI Assistant"
+                        }
+                    }
+
+                    ChatCard(
+                        icon = icon,
+                        iconContentDescription = iconDescription,
+                        it.title,
+                        it.text,
+                        it.date,
+                        textColor
+                    )
+                }
+            }
+        }
+
+        else -> Box(Modifier.fillMaxSize()) {
+            CircularProgressIndicator(
+                Modifier.align(Alignment.Center),
+                color = textColor
+            )
+        }
+    }
+}
+
+@Composable
+fun ChatCard(
+    icon: ImageVector,
+    iconContentDescription: String,
+    title: String,
+    lastMessage: String,
+    date: String,
+    textColor: Color
+) {
+    GlassBox(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Bottom) {
+            Box(
+                Modifier.size(42.dp).clip(CircleShape).background(textColor.copy(alpha = 0.1f)),
+                Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = iconContentDescription,
+                    tint = textColor,
+                    modifier = Modifier.size(20.dp)
+                )
             }
             Spacer(Modifier.width(16.dp))
             Column {
-                Text(chat.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text(chat.lastMessage, color = Color.Gray, fontSize = 14.sp)
-                Text(chat.date, color = Color.LightGray, fontSize = 12.sp)
+                Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+                    Text(title, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = textColor)
+                    Text(date, color = textColor.copy(alpha = 0.6f), fontSize = 11.sp)
+                }
+                Markdown(lastMessage)
             }
         }
     }
 }
 
 @Composable
-fun InputSection(
-    inputComponent: () -> ChatInputComponent,
-) {
+fun InputSectionContent(inputComponent: () -> ChatInputComponent, textColor: Color) {
     val component = remember { inputComponent() }
     val state by component.subscribeAsUiState { it.toUI() }
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = Color.White,
-        shadowElevation = 8.dp
+    Row(
+        Modifier.padding(horizontal = 12.dp, vertical = 8.dp).fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            TextField(
-                value = state.inputValue,
-                onValueChange = { component.intent(ChatInputIntent.ChangeInputValue(it)) },
-                placeholder = {
-                    if (state.inputValue.isEmpty()) {
-                        Text(state.typingHint)
-                    }
-                },
-                modifier = Modifier.weight(1f),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    disabledContainerColor = Color.Transparent,
-                )
+        IconButton(onClick = {}) {
+            Icon(
+                Icons.Default.Add,
+                null,
+                tint = textColor.copy(alpha = 0.7f)
             )
-            IconButton(
-                onClick = { component.intent(ChatInputIntent.ClickOnSendMessage) },
-                enabled = state.inputValue.isNotBlank()
-            ) {
-                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, tint = Color(0xFF2B6CB0))
-            }
+        }
+        TextField(
+            value = state.inputValue,
+            onValueChange = { component.intent(ChatInputIntent.ChangeInputValue(it)) },
+            placeholder = { Text(state.typingHint, color = textColor.copy(alpha = 0.5f)) },
+            modifier = Modifier.weight(1f),
+            colors = TextFieldDefaults.colors(
+                focusedTextColor = textColor,
+                unfocusedTextColor = textColor,
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                cursorColor = textColor,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent
+            )
+        )
+        IconButton(
+            onClick = { component.intent(ChatInputIntent.ClickOnSendMessage) },
+            enabled = state.inputValue.isNotBlank(),
+            modifier = Modifier.background(
+                if (state.inputValue.isNotBlank()) textColor.copy(alpha = 0.15f) else Color.Transparent,
+                CircleShape
+            )
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.Send,
+                null,
+                tint = if (state.inputValue.isNotBlank()) textColor else textColor.copy(alpha = 0.3f)
+            )
         }
     }
 }
 
 @Composable
-fun SidebarItem(icon: ImageVector, label: String, selected: Boolean = false) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().height(48.dp),
-        color = if (selected) Color(0xFFE3F2FD) else Color.Transparent,
-        shape = RoundedCornerShape(8.dp)
+fun SidebarItem(icon: ImageVector, label: String, selected: Boolean = false, textColor: Color) {
+    Box(
+        modifier = Modifier.fillMaxWidth().height(50.dp).clip(RoundedCornerShape(12.dp))
+            .background(if (selected) textColor.copy(alpha = 0.12f) else Color.Transparent)
+            .clickable {},
+        contentAlignment = Alignment.CenterStart
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(icon, contentDescription = null, tint = if (selected) Color(0xFF1976D2) else Color.DarkGray)
-            Spacer(Modifier.width(12.dp))
-            Text(label, color = if (selected) Color(0xFF1976D2) else Color.DarkGray, fontWeight = FontWeight.Medium)
+        Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                icon,
+                null,
+                tint = if (selected) textColor else textColor.copy(alpha = 0.6f),
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(16.dp))
+            Text(
+                label,
+                color = if (selected) textColor else textColor.copy(alpha = 0.6f),
+                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                fontSize = 14.sp
+            )
         }
     }
 }
-
-data class ChatInfo(
-    val title: String,
-    val lastMessage: String,
-    val date: String,
-    val icon: ImageVector
-)
-
-/*
-val chatData = listOf(
-    ChatInfo("DeepSeek AI", "Hello! How can I assist you today?", "Yesterday", Icons.Default.AutoAwesome),
-    ChatInfo("Project X", "Great progress on your code!", "Yesterday", Icons.Default.SmartToy),
-    ChatInfo("New Idea", "Brainstorming session notes", "Oct 12", Icons.Default.Lightbulb)
-)*/

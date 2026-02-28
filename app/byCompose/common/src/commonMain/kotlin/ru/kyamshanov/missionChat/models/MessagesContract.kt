@@ -22,10 +22,17 @@ sealed interface MessagesStateUI {
 
     @Immutable
     data class MessageModel(
+        val id: String,
         val title: String,
         val text: String,
         val date: String,
-    )
+        val messageType: MessageType
+    ) {
+
+        enum class MessageType {
+            Human, AI_ASSISTANT
+        }
+    }
 }
 
 fun MessagesState.toUI(): MessagesStateUI = when (this) {
@@ -34,4 +41,14 @@ fun MessagesState.toUI(): MessagesStateUI = when (this) {
     is MessagesState.Loading -> MessagesStateUI.Loading
 }
 
-fun MessagesState.MessageModel.toUI() = MessagesStateUI.MessageModel(title = title, text = text, date = date)
+fun MessagesState.MessageModel.toUI() =
+    MessagesStateUI.MessageModel(
+        id = id.toString(),
+        title = title,
+        text = text,
+        date = date,
+        messageType = when (owner) {
+            MessagesState.MessageOwner.AI -> MessagesStateUI.MessageModel.MessageType.AI_ASSISTANT
+            MessagesState.MessageOwner.Human -> MessagesStateUI.MessageModel.MessageType.Human
+        }
+    )

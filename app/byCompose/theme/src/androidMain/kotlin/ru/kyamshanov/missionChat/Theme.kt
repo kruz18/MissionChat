@@ -1,3 +1,5 @@
+@file:JvmName("ThemeAndroid")
+
 package ru.kyamshanov.missionChat
 
 import android.os.Build
@@ -442,4 +444,3 @@ actual fun AppTheme(
         )
     }
 }
-

@@ -1,22 +1,27 @@
 package ru.kyamshanov.missionChat.container
 
+import kotlinx.coroutines.awaitCancellation
 import pro.respawn.flowmvi.api.Container
 import pro.respawn.flowmvi.dsl.store
 import pro.respawn.flowmvi.dsl.updateState
 import pro.respawn.flowmvi.dsl.updateStateImmediate
 import pro.respawn.flowmvi.plugins.recover
 import pro.respawn.flowmvi.plugins.reduce
+import pro.respawn.flowmvi.plugins.whileSubscribed
 import ru.kyamshanov.missionChat.contranct.MessagesAction
 import ru.kyamshanov.missionChat.contranct.MessagesIntent
 import ru.kyamshanov.missionChat.contranct.MessagesState
-import ru.kyamshanov.missionChat.network.DeepseekApi
+import ru.kyamshanov.missionChat.domain.ChatWindowInteractorFactory
+import ru.kyamshanov.missionChat.domain.models.ChatWindowState
+import ru.kyamshanov.missionChat.domain.models.Interlocutor
+import ru.kyamshanov.missionChat.domain.models.MessageInference
 import java.util.*
 
-//private typealias Ctx = PipelineContext<State, Intent, Action>
-
 internal class MessagesContainer(
-    private val deepseekApi: DeepseekApi
+    chatWindowInteractorFactory: ChatWindowInteractorFactory
 ) : Container<MessagesState, MessagesIntent, MessagesAction> {
+
+    private val chatWindowInteractor = chatWindowInteractorFactory.newInstance()
 
     override val store = store(initial = MessagesState.Loaded(emptyList())) {
         configure {
@@ -24,54 +29,67 @@ internal class MessagesContainer(
             name = "MessagesContainer"
         }
 
+        whileSubscribed {
+            try {
+                awaitCancellation()
+            } finally {
+                chatWindowInteractor.release()
+            }
+        }
+
         recover {
             it.printStackTrace()
+            updateState { MessagesState.Error(it) }
             null
         }
+
         reduce { intent ->
             when (intent) {
                 is MessagesIntent.AddRequestMessage -> {
+                    val interactorState = chatWindowInteractor.state.value
+                    if (interactorState !is ChatWindowState.Idle) return@reduce
 
-                    val newMessageModel = MessagesState.MessageModel(
-                        title = UUID.randomUUID().toString(),
-                        text = "Thinking...",
-                        date = "now"
-                    )
+                    val userMessageId = UUID.randomUUID().toString()
+                    val assistantMessageId = UUID.randomUUID().toString()
+                    val timestamp = System.currentTimeMillis().toString()
 
                     updateStateImmediate<MessagesState.Loaded, _> {
                         copy(
-                            messages = messages + MessagesState.MessageModel(
-                                title = UUID.randomUUID().toString(),
-                                text = intent.message,
-                                date = System.currentTimeMillis().toString()
+                            messages = messages + listOf(
+                                MessagesState.MessageModel(
+                                    title = userMessageId,
+                                    text = intent.message,
+                                    date = timestamp,
+                                    owner = MessagesState.MessageOwner.Human
+                                ),
+                                MessagesState.MessageModel(
+                                    title = assistantMessageId,
+                                    text = "Thinking...",
+                                    date = timestamp,
+                                    owner = MessagesState.MessageOwner.AI
+                                )
                             )
                         )
                     }
 
-                    updateStateImmediate<MessagesState.Loaded, _> {
-                        copy(messages = messages + newMessageModel)
-                    }
+                    val humanMessage = MessageInference.HumanMessage(
+                        content = intent.message,
+                        human = Interlocutor.Human(name = "User")
+                    )
 
-                    deepseekApi.chatCompletionStream(
-                        intent.message
-                    ).collect { chatResponse ->
-                        updateState<MessagesState.Loaded, _> {
-                            copy(
-                                messages = messages.map { messageModel ->
-                                    if (messageModel.title == newMessageModel.title) {
-                                        if (messageModel.text == newMessageModel.text) {
-                                            messageModel.copy(text = chatResponse)
-                                        } else {
-                                            messageModel.copy(text = messageModel.text + chatResponse)
-                                        }
-                                    } else {
-                                        messageModel
+                    with(chatWindowInteractor) {
+                        interactorState.submitMessage(humanMessage).collect { answeringState ->
+                            updateState<MessagesState.Loaded, _> {
+                                copy(
+                                    messages = messages.map {
+                                        if (it.title == assistantMessageId) {
+                                            it.copy(text = answeringState.assistantMessage.content)
+                                        } else it
                                     }
-                                }
-                            )
+                                )
+                            }
                         }
                     }
-
                 }
             }
         }

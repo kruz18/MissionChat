@@ -1,3 +1,5 @@
+@file:JvmName("ThemeJvm")
+
 package ru.kyamshanov.missionChat
 
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -184,4 +186,3 @@ actual fun AppTheme(
         )
     }
 }
-

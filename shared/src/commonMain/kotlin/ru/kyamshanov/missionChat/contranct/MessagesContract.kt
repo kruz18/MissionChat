@@ -3,6 +3,7 @@ package ru.kyamshanov.missionChat.contranct
 import pro.respawn.flowmvi.api.MVIAction
 import pro.respawn.flowmvi.api.MVIIntent
 import pro.respawn.flowmvi.api.MVIState
+import java.util.UUID
 
 sealed interface MessagesState : MVIState {
     data class Error(val e: Exception?) : MessagesState
@@ -17,7 +18,14 @@ sealed interface MessagesState : MVIState {
         val title: String,
         val text: String,
         val date: String,
+        val owner: MessageOwner,
+        val id: UUID = UUID.randomUUID()
     )
+
+    sealed interface MessageOwner {
+        data object Human : MessageOwner
+        data object AI : MessageOwner
+    }
 }
 
 

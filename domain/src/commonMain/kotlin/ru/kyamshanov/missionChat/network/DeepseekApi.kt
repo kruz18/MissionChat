@@ -6,7 +6,7 @@ import ru.kyamshanov.missionChat.models.Message
 /**
  * Интерфейс для взаимодействия с API Deepseek.
  */
-interface DeepseekApi {
+internal interface DeepseekApi {
 
     /**
      * Выполняет потоковый запрос к чат-модели.
