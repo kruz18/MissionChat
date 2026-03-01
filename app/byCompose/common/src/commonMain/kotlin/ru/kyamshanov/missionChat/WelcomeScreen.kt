@@ -1,5 +1,9 @@
 package ru.kyamshanov.missionChat
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -19,6 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -27,11 +32,13 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,19 +46,32 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mikepenz.markdown.m3.Markdown
 import ru.kyamshanov.missionChat.components.GlassBox
 import ru.kyamshanov.missionChat.contranct.ChatInputIntent
+import ru.kyamshanov.missionChat.contranct.MessagesIntent
 import ru.kyamshanov.missionChat.models.MessagesStateUI
 import ru.kyamshanov.missionChat.models.MessagesStateUI.MessageModel.MessageType.AI_ASSISTANT
 import ru.kyamshanov.missionChat.models.MessagesStateUI.MessageModel.MessageType.Human
@@ -149,7 +169,11 @@ fun InitialWelcomeScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp)
                 ) {
-                    InputSectionContent(chatInputComponent, textColor)
+                    val mComponent = remember { messagesComponent() }
+                    val mState by mComponent.subscribeAsUiState { it.toUI() }
+                    val isGenerating = (mState as? MessagesStateUI.Loaded)?.isGenerating == true
+
+                    InputSectionContent(chatInputComponent, isGenerating, textColor)
                 }
             }
         }
@@ -187,14 +211,23 @@ private fun HeaderContent(title: String, textColor: Color) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MessagesSection(messagesComponent: () -> MessagesComponent, textColor: Color) {
     val component = remember { messagesComponent() }
     val state by component.subscribeAsUiState { it.toUI() }
     when (val model = state) {
         is MessagesStateUI.Loaded -> {
+            val listState = rememberLazyListState()
+            LaunchedEffect(model.messages.size) {
+                if (listState.firstVisibleItemIndex <= 1) {
+                    listState.animateScrollToItem(0)
+                }
+            }
+
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
+                state = listState,
                 contentPadding = PaddingValues(vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.Bottom),
                 reverseLayout = true,
@@ -220,12 +253,14 @@ private fun MessagesSection(messagesComponent: () -> MessagesComponent, textColo
                     }
 
                     ChatCard(
+                        modifier = Modifier.animateItem(),
                         icon = icon,
                         iconContentDescription = iconDescription,
                         title = it.name,
                         lastMessage = it.content,
                         textColor = textColor,
                         backgroundColor = backgroundColor,
+                        onDelete = { component.intent(MessagesIntent.DeleteMessage(it.id)) }
                     )
                 }
             }
@@ -240,6 +275,7 @@ private fun MessagesSection(messagesComponent: () -> MessagesComponent, textColo
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ChatCard(
     icon: ImageVector,
@@ -247,41 +283,66 @@ fun ChatCard(
     title: String?,
     lastMessage: String,
     textColor: Color,
-    backgroundColor: Color
+    backgroundColor: Color,
+    modifier: Modifier = Modifier,
+    onDelete: () -> Unit = {}
 ) {
+    var isHovered by remember { mutableStateOf(false) }
+
     GlassBox(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .onPointerEvent(PointerEventType.Enter) { isHovered = true }
+            .onPointerEvent(PointerEventType.Exit) { isHovered = false },
         shape = RoundedCornerShape(16.dp),
         backgroundColor = backgroundColor,
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Bottom) {
-            Box(
-                Modifier.size(42.dp).clip(CircleShape).background(textColor.copy(alpha = 0.1f)),
-                Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = iconContentDescription,
-                    tint = textColor,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.align(Alignment.CenterVertically)) {
-                if (!title.isNullOrBlank()) {
-                    Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-
-                        Text(
-                            text = title,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 15.sp,
-                            color = textColor
-                        )
-                    }
-//                    Text(date, color = textColor.copy(alpha = 0.6f), fontSize = 11.sp)
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Bottom) {
+                Box(
+                    Modifier.size(42.dp).clip(CircleShape).background(textColor.copy(alpha = 0.1f)),
+                    Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = iconContentDescription,
+                        tint = textColor,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
-                SelectionContainer {
-                    Markdown(lastMessage)
+                Spacer(Modifier.width(16.dp))
+                Column(modifier = Modifier.align(Alignment.CenterVertically)) {
+                    if (!title.isNullOrBlank()) {
+                        Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+
+                            Text(
+                                text = title,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 15.sp,
+                                color = textColor
+                            )
+                        }
+//                    Text(date, color = textColor.copy(alpha = 0.6f), fontSize = 11.sp)
+                    }
+                    SelectionContainer {
+                        Markdown(lastMessage)
+                    }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = isHovered,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
+            ) {
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = textColor.copy(alpha = 0.7f),
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         }
@@ -289,9 +350,18 @@ fun ChatCard(
 }
 
 @Composable
-fun InputSectionContent(inputComponent: () -> ChatInputComponent, textColor: Color) {
+fun InputSectionContent(
+    inputComponent: () -> ChatInputComponent,
+    isGenerating: Boolean,
+    textColor: Color
+) {
     val component = remember { inputComponent() }
     val state by component.subscribeAsUiState { it.toUI() }
+
+    LaunchedEffect(isGenerating) {
+        component.intent(ChatInputIntent.SetGenerating(isGenerating))
+    }
+    
     Row(
         Modifier.padding(horizontal = 12.dp, vertical = 8.dp).fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -307,56 +377,74 @@ fun InputSectionContent(inputComponent: () -> ChatInputComponent, textColor: Col
             value = state.inputValue,
             onValueChange = { component.intent(ChatInputIntent.ChangeInputValue(it)) },
             placeholder = { Text(state.typingHint, color = textColor.copy(alpha = 0.5f)) },
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .onPreviewKeyEvent {
+                    if (it.key == Key.Enter && it.type == KeyEventType.KeyDown) {
+                        if (it.isShiftPressed) {
+                            false
+                        } else {
+                            if (isGenerating) {
+                                component.intent(ChatInputIntent.StopGeneration)
+                            } else if (state.inputValue.isNotBlank()) {
+                                component.intent(ChatInputIntent.ClickOnSendMessage)
+                            }
+                            true
+                        }
+                    } else {
+                        false
+                    }
+                },
             colors = TextFieldDefaults.colors(
-                focusedTextColor = textColor,
-                unfocusedTextColor = textColor,
                 focusedContainerColor = Color.Transparent,
                 unfocusedContainerColor = Color.Transparent,
-                cursorColor = textColor,
                 focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent
+                unfocusedIndicatorColor = Color.Transparent,
+                cursorColor = textColor
             )
         )
         IconButton(
-            onClick = { component.intent(ChatInputIntent.ClickOnSendMessage) },
-            enabled = state.inputValue.isNotBlank(),
-            modifier = Modifier.background(
-                if (state.inputValue.isNotBlank()) textColor.copy(alpha = 0.15f) else Color.Transparent,
-                CircleShape
-            )
+            onClick = {
+                if (isGenerating) {
+                    component.intent(ChatInputIntent.StopGeneration)
+                } else if (state.inputValue.isNotBlank()) {
+                    component.intent(ChatInputIntent.ClickOnSendMessage)
+                }
+            },
+            enabled = state.inputValue.isNotBlank() || isGenerating
         ) {
             Icon(
-                Icons.AutoMirrored.Filled.Send,
+                if (isGenerating) Icons.Default.Stop else Icons.AutoMirrored.Filled.Send,
                 null,
-                tint = if (state.inputValue.isNotBlank()) textColor else textColor.copy(alpha = 0.3f)
+                tint = textColor
             )
         }
     }
 }
 
 @Composable
-fun SidebarItem(icon: ImageVector, label: String, selected: Boolean = false, textColor: Color) {
-    Box(
-        modifier = Modifier.fillMaxWidth().height(50.dp).clip(RoundedCornerShape(12.dp))
-            .background(if (selected) textColor.copy(alpha = 0.12f) else Color.Transparent)
-            .clickable {},
-        contentAlignment = Alignment.CenterStart
+fun SidebarItem(icon: ImageVector, text: String, selected: Boolean = false, textColor: Color) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (selected) textColor.copy(alpha = 0.1f) else Color.Transparent)
+            .clickable { }
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                icon,
-                null,
-                tint = if (selected) textColor else textColor.copy(alpha = 0.6f),
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(Modifier.width(16.dp))
-            Text(
-                label,
-                color = if (selected) textColor else textColor.copy(alpha = 0.6f),
-                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-                fontSize = 14.sp
-            )
-        }
+        Icon(
+            icon,
+            null,
+            modifier = Modifier.size(20.dp),
+            tint = if (selected) textColor else textColor.copy(alpha = 0.7f)
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text,
+            fontSize = 14.sp,
+            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+            color = if (selected) textColor else textColor.copy(alpha = 0.7f)
+        )
     }
 }

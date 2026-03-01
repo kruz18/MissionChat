@@ -2,6 +2,7 @@
 
 package ru.kyamshanov.missionChat.domain.impl
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -84,7 +85,7 @@ internal class ChatWindowInteractorImpl(
                 )
             }
             .onCompletion { error ->
-                if (error == null) {
+                if (error == null || error is CancellationException) {
                     val assistantMessage =
                         MessageInference.AssistantMessage(
                             content = currentResponseContent,
@@ -94,7 +95,6 @@ internal class ChatWindowInteractorImpl(
                             id = assistantMessageId,
                         )
 
-                    // Сохраняем ответ ассистента в БД и локальную историю
                     scope.launch {
                         conversationRepository.insertMessage(conversation, assistantMessage)
                     }
@@ -103,7 +103,6 @@ internal class ChatWindowInteractorImpl(
 
                     _state.value = ChatWindowState.Idle(messages = messageInferences.toList())
                 } else {
-                    // В случае ошибки возвращаемся в Idle с текущим списком сообщений
                     _state.value = ChatWindowState.Idle(messages = messageInferences.toList())
                 }
             }
@@ -123,6 +122,14 @@ internal class ChatWindowInteractorImpl(
                 _state.value = answeringState
                 emit(answeringState)
             }
+    }
+
+    override suspend fun deleteMessage(messageId: String) {
+        conversationRepository.deleteMessage(messageId)
+        messageInferences.removeAll { it.id.toString() == messageId }
+        chatHistory.clear()
+        chatHistory.addAll(messageInferences.map { Message(it.role, it.content) })
+        _state.update { ChatWindowState.Idle(messages = messageInferences.toList()) }
     }
 
     override suspend fun release() {

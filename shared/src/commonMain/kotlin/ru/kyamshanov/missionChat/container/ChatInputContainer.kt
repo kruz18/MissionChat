@@ -8,6 +8,7 @@ import pro.respawn.flowmvi.plugins.reduce
 import ru.kyamshanov.missionChat.contranct.ChatInputAction
 import ru.kyamshanov.missionChat.contranct.ChatInputIntent
 import ru.kyamshanov.missionChat.contranct.ChatInputState
+import ru.kyamshanov.missionChat.utils.empty
 
 internal class ChatInputContainer(
     initial: ChatInputState
@@ -16,7 +17,7 @@ internal class ChatInputContainer(
     override val store = store(initial = initial) {
         configure {
             debuggable = true
-            name = ""
+            name = "ChatInputContainer"
         }
 
         recover {
@@ -33,8 +34,25 @@ internal class ChatInputContainer(
 
                 is ChatInputIntent.ClickOnSendMessage -> {
                     withState {
-                        println("Hello world!")
-                        action(ChatInputAction.SendMessage(inputValue))
+                        if (isGenerating) return@withState
+                        val text = inputValue
+                        updateStateImmediate<ChatInputState, _> {
+                            copy(inputValue = String.empty, isGenerating = true)
+                        }
+                        action(ChatInputAction.SendMessage(text))
+                    }
+                }
+
+                is ChatInputIntent.StopGeneration -> {
+                    updateStateImmediate<ChatInputState, _> {
+                        copy(isGenerating = false)
+                    }
+                    action(ChatInputAction.StopGeneration)
+                }
+
+                is ChatInputIntent.SetGenerating -> {
+                    updateStateImmediate<ChatInputState, _> {
+                        copy(isGenerating = intent.isGenerating)
                     }
                 }
             }

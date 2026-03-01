@@ -18,6 +18,7 @@ sealed interface MessagesStateUI {
     @Immutable
     data class Loaded(
         val messages: ImmutableList<MessageModel>,
+        val isGenerating: Boolean = false,
     ) : MessagesStateUI
 
     @Immutable
@@ -43,20 +44,23 @@ sealed interface MessagesStateUI {
 
 fun MessagesState.toUI(): MessagesStateUI = when (this) {
     is MessagesState.Error -> MessagesStateUI.Error(e.toUI())
-    is MessagesState.Loaded -> MessagesStateUI.Loaded(messages.map { it.toUI() }.toImmutableList())
+    is MessagesState.Loaded -> MessagesStateUI.Loaded(
+        messages = messages.map { it.toUI() }.toImmutableList(),
+        isGenerating = isGenerating
+    )
     is MessagesState.Loading -> MessagesStateUI.Loading
 }
 
 fun MessagesState.MessageModel.toUI() =
     MessagesStateUI.MessageModel(
-        id = id.toString(),
+        id = id,
         messageType = when (owner) {
             MessageOwner.AI -> MessagesStateUI.MessageModel.MessageType.AI_ASSISTANT
             MessageOwner.Human -> MessagesStateUI.MessageModel.MessageType.Human
             MessageOwner.SYSTEM -> MessagesStateUI.MessageModel.MessageType.SYSTEM
         },
         date = MessagesStateUI.MessageModel.Date(
-            dayOfMonth = date.day,
+            dayOfMonth = date.dayOfMonth,
             month = date.month.number,
             year = date.year
         ),

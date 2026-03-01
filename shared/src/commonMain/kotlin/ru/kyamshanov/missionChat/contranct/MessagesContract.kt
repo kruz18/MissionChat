@@ -12,6 +12,7 @@ sealed interface MessagesState : MVIState {
 
     data class Loaded(
         val messages: List<MessageModel>,
+        val isGenerating: Boolean = false,
     ) : MessagesState
 
     data class MessageModel(
@@ -35,7 +36,10 @@ sealed interface MessagesState : MVIState {
 sealed interface MessagesIntent : MVIIntent {
 
     data class AddRequestMessage(val message: String) : MessagesIntent
+
+    data class DeleteMessage(val id: String) : MessagesIntent
+
+    data object StopGeneration : MessagesIntent
 }
 
 sealed interface MessagesAction : MVIAction
-

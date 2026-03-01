@@ -26,6 +26,10 @@ internal class RoomConversationRepository(
         message: MessageInference
     ): Long =
         messageDao.insert(message.toEntity(conversation))
+
+    override suspend fun deleteMessage(messageId: String) {
+        messageDao.deleteMessage(messageId)
+    }
 }
 
 @OptIn(ExperimentalTime::class)

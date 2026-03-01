@@ -4,7 +4,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import ru.kyamshanov.missionChat.domain.models.ChatWindowState
 import ru.kyamshanov.missionChat.domain.models.MessageInference
-import ru.kyamshanov.missionChat.models.Message
 
 /**
  * Stateful
@@ -30,6 +29,11 @@ interface ChatWindowInteractor {
      * return Resule.success if message sent success
      */
     fun ChatWindowState.Idle.submitMessage(message: MessageInference.HumanMessage): Flow<ChatWindowState.Answering>
+
+    /**
+     * delete message by id
+     */
+    suspend fun deleteMessage(messageId: String)
 
     /**
      * clear all data inside ChatWindowInteractor

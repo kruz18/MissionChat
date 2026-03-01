@@ -8,4 +8,6 @@ internal interface ConversationRepository {
     suspend fun getMessages(conversation: Conversation): List<MessageInference>
 
     suspend fun insertMessage(conversation: Conversation, message: MessageInference): Long
+
+    suspend fun deleteMessage(messageId: String)
 }

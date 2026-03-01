@@ -2,9 +2,11 @@
 
 package ru.kyamshanov.missionChat.container
 
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import pro.respawn.flowmvi.api.Container
@@ -20,8 +22,12 @@ import ru.kyamshanov.missionChat.domain.ChatWindowInteractor
 import ru.kyamshanov.missionChat.domain.ChatWindowInteractorFactory
 import ru.kyamshanov.missionChat.domain.models.ChatWindowState
 import ru.kyamshanov.missionChat.domain.models.Conversation
-import ru.kyamshanov.missionChat.domain.models.Interlocutor
+import ru.kyamshanov.missionChat.domain.models.Interlocutor.Human
 import ru.kyamshanov.missionChat.domain.models.MessageInference
+import ru.kyamshanov.missionChat.domain.models.MessageInference.AssistantMessage
+import ru.kyamshanov.missionChat.domain.models.MessageInference.HumanMessage
+import ru.kyamshanov.missionChat.domain.models.MessageInference.SystemMessage
+import ru.kyamshanov.missionChat.domain.models.MessageInference.ToolMessage
 import kotlin.time.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -32,6 +38,8 @@ internal class MessagesContainer(
 
     private val chatWindowInteractor: ChatWindowInteractor =
         chatWindowInteractorFactory.newInstance(Conversation())
+
+    private var generationJob: Job? = null
 
     override val store = store(initial = MessagesState.Loading) {
         configure {
@@ -46,7 +54,8 @@ internal class MessagesContainer(
                         is ChatWindowState.Idle -> {
                             updateState {
                                 MessagesState.Loaded(
-                                    messages = interactorState.messages.map { it.toModel() }
+                                    messages = interactorState.messages.map { it.toModel() },
+                                    isGenerating = generationJob?.isActive == true
                                 )
                             }
                         }
@@ -83,9 +92,9 @@ internal class MessagesContainer(
                     val timestamp =
                         Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
-                    val humanMessage = MessageInference.HumanMessage(
+                    val humanMessage = HumanMessage(
                         content = intent.message,
-                        human = Interlocutor.Human(name = "User"),
+                        human = Human(name = "User"),
                         createdAt = timestamp,
                         id = humanMessageId
                     )
@@ -99,30 +108,53 @@ internal class MessagesContainer(
                                     name = humanMessage.human.name,
                                     id = humanMessageId.toString()
                                 ),
-                            )
+                            ),
+                            isGenerating = true
                         )
                     }
 
-                    with(chatWindowInteractor) {
-                        var assistantMessageId: String? = null
-                        interactorState.submitMessage(humanMessage).collect { answeringState ->
-                            updateStateImmediate<MessagesState.Loaded, MessagesState> {
-                                val updatedMessaged =
-                                    if (assistantMessageId == null) {
-                                        assistantMessageId =
-                                            answeringState.assistantMessage.id.toString()
-                                        messages + answeringState.assistantMessage.toModel()
-                                    } else {
-                                        messages.map {
-                                            if (it.id == answeringState.assistantMessage.id.toString()) {
-                                                it.copy(content = answeringState.assistantMessage.content)
-                                            } else it
-                                        }
+                    generationJob?.cancel()
+                    generationJob = launch {
+                        try {
+                            with(chatWindowInteractor) {
+                                var assistantMessageId: String? = null
+                                interactorState.submitMessage(humanMessage)
+                                    .collect { answeringState ->
+                                        updateStateImmediate<MessagesState.Loaded, MessagesState> {
+                                            val updatedMessaged =
+                                                if (assistantMessageId == null) {
+                                                    assistantMessageId =
+                                                        answeringState.assistantMessage.id.toString()
+                                                    messages + answeringState.assistantMessage.toModel()
+                                                } else {
+                                                    messages.map {
+                                                        if (it.id == answeringState.assistantMessage.id.toString()) {
+                                                            it.copy(content = answeringState.assistantMessage.content)
+                                                        } else it
+                                                    }
+                                                }
+                                            copy(messages = updatedMessaged)
                                     }
-                                copy(messages = updatedMessaged)
+                                    }
+                            }
+                        } finally {
+                            updateStateImmediate<MessagesState.Loaded, MessagesState> {
+                                copy(isGenerating = false)
                             }
                         }
                     }
+                }
+
+                is MessagesIntent.StopGeneration -> {
+                    generationJob?.cancel()
+                    generationJob = null
+                    updateStateImmediate<MessagesState.Loaded, MessagesState> {
+                        copy(isGenerating = false)
+                    }
+                }
+
+                is MessagesIntent.DeleteMessage -> {
+                    chatWindowInteractor.deleteMessage(intent.id)
                 }
             }
         }
@@ -131,7 +163,7 @@ internal class MessagesContainer(
 
 private fun MessageInference.toModel(): MessagesState.MessageModel {
     return when (this) {
-        is MessageInference.AssistantMessage -> MessagesState.MessageModel(
+        is AssistantMessage -> MessagesState.MessageModel(
             id = id.toString(),
             content = content,
             date = createdAt,
@@ -139,7 +171,7 @@ private fun MessageInference.toModel(): MessagesState.MessageModel {
             name = null,
         )
 
-        is MessageInference.HumanMessage -> MessagesState.MessageModel(
+        is HumanMessage -> MessagesState.MessageModel(
             id = id.toString(),
             content = content,
             date = createdAt,
@@ -147,7 +179,7 @@ private fun MessageInference.toModel(): MessagesState.MessageModel {
             name = human.name,
         )
 
-        is MessageInference.SystemMessage -> MessagesState.MessageModel(
+        is SystemMessage -> MessagesState.MessageModel(
             id = id.toString(),
             content = content,
             date = createdAt,
@@ -155,7 +187,7 @@ private fun MessageInference.toModel(): MessagesState.MessageModel {
             name = null,
         )
 
-        is MessageInference.ToolMessage -> MessagesState.MessageModel(
+        is ToolMessage -> MessagesState.MessageModel(
             id = id.toString(),
             content = content,
             date = createdAt,

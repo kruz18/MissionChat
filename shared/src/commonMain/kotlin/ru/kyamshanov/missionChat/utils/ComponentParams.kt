@@ -17,7 +17,8 @@ data class WelcomeScreenParams(
  */
 data class ChatInputParams(
     val componentContext: ComponentContext,
-    val onSendMessage: (String) -> Unit
+    val onSendMessage: (String) -> Unit,
+    val onStopGeneration: () -> Unit,
 )
 
 /**

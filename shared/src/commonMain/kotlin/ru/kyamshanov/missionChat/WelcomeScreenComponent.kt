@@ -41,6 +41,9 @@ internal class DefaultWelcomeScreenComponent(
                 componentContext = childContext("chatInput"),
                 onSendMessage = { message ->
                     messagesComponent.intent(MessagesIntent.AddRequestMessage(message))
+                },
+                onStopGeneration = {
+                    messagesComponent.intent(MessagesIntent.StopGeneration)
                 }
             )
         )
