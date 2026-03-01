@@ -1,4 +1,10 @@
+@file:OptIn(ExperimentalUuidApi::class)
+
 package ru.kyamshanov.missionChat.domain.models
+
+import kotlinx.datetime.LocalDateTime
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 
 /**
@@ -6,12 +12,15 @@ package ru.kyamshanov.missionChat.domain.models
  */
 sealed interface MessageInference {
 
-    /**
-     * @param content The contents of the system message.
-     * @param associatedHuman An optional interlocutor for the participant. Provides the model information to differentiate between participants of the same role.
-     */
+    val id: Uuid
+    val content: String
+    val createdAt: LocalDateTime
+
+
     data class SystemMessage(
-        val content: String,
+        override val id: Uuid,
+        override val content: String,
+        override val createdAt: LocalDateTime,
         val associatedHuman: Interlocutor.Human? = null
     ) : MessageInference
 
@@ -20,7 +29,9 @@ sealed interface MessageInference {
      * @param human The human of the messages
      */
     data class HumanMessage(
-        val content: String,
+        override val id: Uuid,
+        override val content: String,
+        override val createdAt: LocalDateTime,
         val human: Interlocutor.Human,
     ) : MessageInference
 
@@ -30,7 +41,9 @@ sealed interface MessageInference {
      *
      */
     data class AssistantMessage(
-        val content: String,
+        override val id: Uuid,
+        override val content: String,
+        override val createdAt: LocalDateTime,
         val associatedHuman: Interlocutor.Human? = null,
         val responseStartWith: String? = null
     ) : MessageInference
@@ -42,7 +55,9 @@ sealed interface MessageInference {
      *
      */
     data class ToolMessage(
-        val content: String,
+        override val id: Uuid,
+        override val content: String,
+        override val createdAt: LocalDateTime,
         val tool: Tool,
     ) : MessageInference
 }

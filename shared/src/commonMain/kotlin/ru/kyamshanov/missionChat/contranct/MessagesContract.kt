@@ -1,9 +1,9 @@
 package ru.kyamshanov.missionChat.contranct
 
+import kotlinx.datetime.LocalDateTime
 import pro.respawn.flowmvi.api.MVIAction
 import pro.respawn.flowmvi.api.MVIIntent
 import pro.respawn.flowmvi.api.MVIState
-import java.util.UUID
 
 sealed interface MessagesState : MVIState {
     data class Error(val e: Exception?) : MessagesState
@@ -15,16 +15,19 @@ sealed interface MessagesState : MVIState {
     ) : MessagesState
 
     data class MessageModel(
-        val title: String,
-        val text: String,
-        val date: String,
+        val content: String,
         val owner: MessageOwner,
-        val id: UUID = UUID.randomUUID()
+        val date: LocalDateTime,
+        val name: String?,
+        val id: String,
     )
 
     sealed interface MessageOwner {
         data object Human : MessageOwner
+
         data object AI : MessageOwner
+
+        data object SYSTEM : MessageOwner
     }
 }
 

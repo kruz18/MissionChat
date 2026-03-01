@@ -10,7 +10,9 @@ interface ChatWindowState {
     /**
      * Chat ready to get messages from human
      */
-    data object Idle : ChatWindowState
+    data class Idle(
+        val messages: List<MessageInference>
+    ) : ChatWindowState
 
     /**
      * After answering state will be changed to Idle

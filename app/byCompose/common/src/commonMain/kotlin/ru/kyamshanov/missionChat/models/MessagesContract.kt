@@ -1,11 +1,11 @@
 package ru.kyamshanov.missionChat.models
 
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.Stable
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
-import kotlinx.collections.immutable.toImmutableSet
+import kotlinx.datetime.number
 import ru.kyamshanov.missionChat.contranct.MessagesState
+import ru.kyamshanov.missionChat.contranct.MessagesState.MessageOwner
 
 sealed interface MessagesStateUI {
 
@@ -23,15 +23,21 @@ sealed interface MessagesStateUI {
     @Immutable
     data class MessageModel(
         val id: String,
-        val title: String,
-        val text: String,
-        val date: String,
-        val messageType: MessageType
+        val content: String,
+        val messageType: MessageType,
+        val date: Date,
+        val name: String? = null
     ) {
 
         enum class MessageType {
-            Human, AI_ASSISTANT
+            Human, AI_ASSISTANT, SYSTEM
         }
+
+        data class Date(
+            val dayOfMonth: Int,
+            val month: Int,
+            val year: Int
+        )
     }
 }
 
@@ -44,11 +50,16 @@ fun MessagesState.toUI(): MessagesStateUI = when (this) {
 fun MessagesState.MessageModel.toUI() =
     MessagesStateUI.MessageModel(
         id = id.toString(),
-        title = title,
-        text = text,
-        date = date,
         messageType = when (owner) {
-            MessagesState.MessageOwner.AI -> MessagesStateUI.MessageModel.MessageType.AI_ASSISTANT
-            MessagesState.MessageOwner.Human -> MessagesStateUI.MessageModel.MessageType.Human
-        }
+            MessageOwner.AI -> MessagesStateUI.MessageModel.MessageType.AI_ASSISTANT
+            MessageOwner.Human -> MessagesStateUI.MessageModel.MessageType.Human
+            MessageOwner.SYSTEM -> MessagesStateUI.MessageModel.MessageType.SYSTEM
+        },
+        date = MessagesStateUI.MessageModel.Date(
+            dayOfMonth = date.day,
+            month = date.month.number,
+            year = date.year
+        ),
+        content = content,
+        name = name
     )

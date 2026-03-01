@@ -7,3 +7,8 @@ sealed interface ChatInterface {
      */
     val name: String
 }
+
+
+data object ChatDefault : ChatInterface {
+    override val name = "Chat"
+}

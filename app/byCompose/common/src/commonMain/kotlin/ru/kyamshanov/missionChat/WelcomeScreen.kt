@@ -3,16 +3,41 @@ package ru.kyamshanov.missionChat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -24,14 +49,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mikepenz.markdown.compose.Markdown
 import com.mikepenz.markdown.m3.Markdown
-import com.mikepenz.markdown.model.DefaultMarkdownColors
-import kotlinx.collections.immutable.ImmutableList
 import ru.kyamshanov.missionChat.components.GlassBox
 import ru.kyamshanov.missionChat.contranct.ChatInputIntent
 import ru.kyamshanov.missionChat.models.MessagesStateUI
-import ru.kyamshanov.missionChat.models.MessagesStateUI.MessageModel.MessageType.*
+import ru.kyamshanov.missionChat.models.MessagesStateUI.MessageModel.MessageType.AI_ASSISTANT
+import ru.kyamshanov.missionChat.models.MessagesStateUI.MessageModel.MessageType.Human
 import ru.kyamshanov.missionChat.models.subscribeAsUiState
 import ru.kyamshanov.missionChat.models.toUI
 
@@ -119,11 +142,9 @@ fun InitialWelcomeScreen(
                 ) {
                     HeaderContent(title, textColor)
                 }
-                Spacer(Modifier.height(16.dp))
-                Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                Box(modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 20.dp)) {
                     MessagesSection(messagesComponent, textColor)
                 }
-                Spacer(Modifier.height(16.dp))
                 GlassBox(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp)
@@ -181,25 +202,30 @@ private fun MessagesSection(messagesComponent: () -> MessagesComponent, textColo
                 items(model.messages.asReversed(), key = { it.id }) {
                     val icon: ImageVector
                     val iconDescription: String
+                    val backgroundColor: Color
                     when (it.messageType) {
                         Human -> {
                             icon = Icons.Default.Person
                             iconDescription = "Human"
+                            backgroundColor = Color.White
                         }
 
                         AI_ASSISTANT -> {
                             icon = Icons.AutoMirrored.Filled.Chat
                             iconDescription = "AI Assistant"
+                            backgroundColor = Color.Gray
                         }
+
+                        MessagesStateUI.MessageModel.MessageType.SYSTEM -> TODO()
                     }
 
                     ChatCard(
                         icon = icon,
                         iconContentDescription = iconDescription,
-                        it.title,
-                        it.text,
-                        it.date,
-                        textColor
+                        title = it.name,
+                        lastMessage = it.content,
+                        textColor = textColor,
+                        backgroundColor = backgroundColor,
                     )
                 }
             }
@@ -218,12 +244,16 @@ private fun MessagesSection(messagesComponent: () -> MessagesComponent, textColo
 fun ChatCard(
     icon: ImageVector,
     iconContentDescription: String,
-    title: String,
+    title: String?,
     lastMessage: String,
-    date: String,
-    textColor: Color
+    textColor: Color,
+    backgroundColor: Color
 ) {
-    GlassBox(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
+    GlassBox(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        backgroundColor = backgroundColor,
+    ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.Bottom) {
             Box(
                 Modifier.size(42.dp).clip(CircleShape).background(textColor.copy(alpha = 0.1f)),
@@ -237,12 +267,22 @@ fun ChatCard(
                 )
             }
             Spacer(Modifier.width(16.dp))
-            Column {
-                Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-                    Text(title, fontWeight = FontWeight.Medium, fontSize = 15.sp, color = textColor)
-                    Text(date, color = textColor.copy(alpha = 0.6f), fontSize = 11.sp)
+            Column(modifier = Modifier.align(Alignment.CenterVertically)) {
+                if (!title.isNullOrBlank()) {
+                    Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
+
+                        Text(
+                            text = title,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 15.sp,
+                            color = textColor
+                        )
+                    }
+//                    Text(date, color = textColor.copy(alpha = 0.6f), fontSize = 11.sp)
                 }
-                Markdown(lastMessage)
+                SelectionContainer {
+                    Markdown(lastMessage)
+                }
             }
         }
     }

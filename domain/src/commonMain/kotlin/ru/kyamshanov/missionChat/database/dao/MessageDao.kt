@@ -9,7 +9,7 @@ import ru.kyamshanov.missionChat.database.entities.MessageEntity
 @Dao
 interface MessageDao {
     @Insert
-    suspend fun insert(message: MessageEntity)
+    suspend fun insert(message: MessageEntity): Long
 
     @Query("SELECT * FROM messages WHERE conversationId = :conversationId ORDER BY timestamp ASC")
     fun getMessagesForConversation(conversationId: String): Flow<List<MessageEntity>>

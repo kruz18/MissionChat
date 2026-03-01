@@ -19,6 +19,7 @@ fun GlassBox(
     modifier: Modifier = Modifier,
     shape: Shape = RoundedCornerShape(16.dp),
     blurRadius: Dp = 12.dp, // Оставляем параметр для совместимости, но не используем blur на контенте
+    backgroundColor: Color = Color.White,
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
@@ -27,8 +28,8 @@ fun GlassBox(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color.White.copy(alpha = 0.25f), // Увеличена непрозрачность для контраста
-                        Color.White.copy(alpha = 0.15f)
+                        backgroundColor.copy(alpha = 0.25f), // Увеличена непрозрачность для контраста
+                        backgroundColor.copy(alpha = 0.15f)
                     )
                 )
             )
@@ -36,8 +37,8 @@ fun GlassBox(
                 width = 1.dp,
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        Color.White.copy(alpha = 0.4f), // Более яркая граница
-                        Color.White.copy(alpha = 0.2f)
+                        backgroundColor.copy(alpha = 0.4f), // Более яркая граница
+                        backgroundColor.copy(alpha = 0.2f)
                     )
                 ),
                 shape = shape
