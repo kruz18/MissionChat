@@ -1,4 +1,6 @@
 [versions]
+compose-componentsResources = "1.10.1"
+compose-foundation = "1.10.1"
 kotlin = "2.3.10"
 agp = "8.12.3"
 androidx-activityCompose = "1.12.4"
@@ -8,7 +10,10 @@ kotlinx-serialization = "1.10.0"
 decompose = "3.4.0"
 android-compileSdk = "36"
 android-minSdk = "24"
-uiTextGoogleFonts = "1.10.4"
+compose-material3 = "1.9.0"
+compose-runtime = "1.10.1"
+compose-ui = "1.10.1"
+compose-uiTextGoogleFonts = "1.10.4"
 flowmvi = "3.2.1"
 kotlinx-coroutines = "1.10.2"
 koin-bom = "4.2.0-RC1"
@@ -21,16 +26,19 @@ room = "2.8.4"
 ksp = "2.3.6"
 sqlite = "2.6.2"
 kotlinx-datetime = "0.7.1"
+compose-uiToolingPreview = "1.10.1"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "androidx-ui-tooling" }
 androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "androidx-ui-tooling" }
+compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "compose-componentsResources" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "compose-foundation" }
 kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinx-serialization" }
 kotlinx-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinx-immutable" }
 decompose = { module = "com.arkivanov.decompose:decompose", version.ref = "decompose" }
 decompose-compose = { module = "com.arkivanov.decompose:extensions-compose", version.ref = "decompose" }
-androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
+compose-androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "compose-uiTextGoogleFonts" }
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin-bom" }
 koin-core = { module = "io.insert-koin:koin-core" }
 koin-android = { module = "io.insert-koin:koin-android" }
@@ -47,6 +55,7 @@ ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "kto
 ktor-client-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-serialization = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "compose-material3" }
 napier = { module = "io.github.aakira:napier", version.ref = "napier" }
 multiplatform-markdown-renderer = { module = "com.mikepenz:multiplatform-markdown-renderer", version.ref = "mikepenz-markdown" }
 multiplatform-markdown-renderer-material3 = { module = "com.mikepenz:multiplatform-markdown-renderer-m3", version.ref = "mikepenz-markdown" }
@@ -54,6 +63,9 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 androidx-sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "compose-runtime" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose-ui" }
+compose-ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", version.ref = "compose-uiToolingPreview" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

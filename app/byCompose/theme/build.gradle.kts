@@ -33,7 +33,7 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
-            implementation(libs.androidx.ui.text.google.fonts)
+            implementation(libs.compose.androidx.ui.text.google.fonts)
         }
 
         jvmMain.dependencies {
