@@ -3,6 +3,9 @@
 package ru.kyamshanov.missionChat.welcomeScreen
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -81,7 +84,11 @@ fun MessagesList(
             }
 
             ChatCard(
-                modifier = Modifier.animateItem(placementSpec = null),
+                modifier = Modifier.animateItem(
+                    fadeInSpec = tween(300),
+                    fadeOutSpec = tween(10),
+                    placementSpec = spring(stiffness = Spring.StiffnessLow),
+                ),
                 icon = icon,
                 iconContentDescription = iconDescription,
                 title = it.name,
