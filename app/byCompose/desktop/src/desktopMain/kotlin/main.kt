@@ -7,13 +7,14 @@ import com.arkivanov.decompose.extensions.compose.lifecycle.LifecycleController
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
-import org.jetbrains.compose.resources.painterResource
 import missionchat.app.bycompose.desktop.generated.resources.Res
 import missionchat.app.bycompose.desktop.generated.resources.app_icon
+import org.jetbrains.compose.resources.painterResource
 import ru.kyamshanov.missionChat.App
 import ru.kyamshanov.missionChat.RootComponent
 import ru.kyamshanov.missionChat.RootComponentFactory
 import ru.kyamshanov.missionChat.initKoin
+import java.awt.Dimension
 
 
 fun main() {
@@ -40,6 +41,7 @@ fun main() {
             title = "missionChat",
             icon = painterResource(Res.drawable.app_icon) //for generate Res class use `gradle :app:byCompose:desktop:generateComposeResClass`
         ) {
+            window.minimumSize = Dimension(600, 800)
             App(root)
         }
     }

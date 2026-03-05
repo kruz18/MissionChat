@@ -13,6 +13,9 @@ import ru.kyamshanov.missionChat.AppTheme
 import ru.kyamshanov.missionChat.ChatInputComponent
 import ru.kyamshanov.missionChat.GlassBackground
 import ru.kyamshanov.missionChat.MessagesComponent
+import ru.kyamshanov.missionChat.components.WindowScaffold
+import ru.kyamshanov.missionChat.components.WindowScaffoldRelative
+import ru.kyamshanov.missionChat.components.WindowScaffoldRelative.SLIDEBAR
 import ru.kyamshanov.missionChat.components.glassmorphism
 import ru.kyamshanov.missionChat.contranct.MessagesIntent
 import ru.kyamshanov.missionChat.models.MessagesStateUI
@@ -45,43 +48,42 @@ fun InitialWelcomeScreen(
     chatInputComponent: ChatInputComponent,
     modifier: Modifier = Modifier
 ) {
-    Row(modifier = modifier.fillMaxSize().padding(16.dp)) {
-        WelcomeSlidebar()
-        Spacer(Modifier.width(16.dp))
-        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-            Column(
-                modifier = Modifier
-                    .widthIn(max = 1000.dp)
-                    .fillMaxHeight()
-                    .align(Alignment.TopCenter)
+
+    WindowScaffold(modifier = modifier.fillMaxSize()) {
+        WelcomeSlidebar(
+            modifier = Modifier.relative(SLIDEBAR)
+        )
+
+        Box(
+            modifier = Modifier
+                .relative(WindowScaffoldRelative.TOOLBAR)
+                .height(70.dp)
+                .glassmorphism(
+                    backgroundColor = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(20.dp),
+                )
+        ) {
+            HeaderContent(title)
+        }
+
+        Column(
+            modifier = Modifier
+                .relative(WindowScaffoldRelative.CONTENT)
+        ) {
+            Box(modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 20.dp)) {
+                MessagesSection(messagesComponent)
+            }
+            Box(
+                modifier = Modifier.fillMaxWidth()
+                    .glassmorphism(
+                        backgroundColor = MaterialTheme.colorScheme.surface,
+                        shape = RoundedCornerShape(24.dp)
+                    )
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(70.dp)
-                        .glassmorphism(
-                            backgroundColor = MaterialTheme.colorScheme.surface,
-                            shape = RoundedCornerShape(20.dp),
-                        )
+                val mState by messagesComponent.subscribeAsUiState { it.toUI() }
+                val isGenerating = (mState as? MessagesStateUI.Loaded)?.isGenerating == true
 
-                ) {
-                    HeaderContent(title)
-                }
-                Box(modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 20.dp)) {
-                    MessagesSection(messagesComponent)
-                }
-                Box(
-                    modifier = Modifier.fillMaxWidth()
-                        .glassmorphism(
-                            backgroundColor = MaterialTheme.colorScheme.surface,
-                            shape = RoundedCornerShape(24.dp)
-                        )
-                ) {
-                    val mState by messagesComponent.subscribeAsUiState { it.toUI() }
-                    val isGenerating = (mState as? MessagesStateUI.Loaded)?.isGenerating == true
-
-                    InputSectionContent(chatInputComponent, isGenerating)
-                }
+                InputSectionContent(chatInputComponent, isGenerating)
             }
         }
     }
