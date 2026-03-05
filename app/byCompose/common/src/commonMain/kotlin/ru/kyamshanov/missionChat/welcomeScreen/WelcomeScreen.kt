@@ -1,5 +1,6 @@
 package ru.kyamshanov.missionChat.welcomeScreen
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -15,7 +16,6 @@ import ru.kyamshanov.missionChat.GlassBackground
 import ru.kyamshanov.missionChat.MessagesComponent
 import ru.kyamshanov.missionChat.components.WindowScaffold
 import ru.kyamshanov.missionChat.components.WindowScaffoldRelative
-import ru.kyamshanov.missionChat.components.WindowScaffoldRelative.SLIDEBAR
 import ru.kyamshanov.missionChat.components.glassmorphism
 import ru.kyamshanov.missionChat.contranct.MessagesIntent
 import ru.kyamshanov.missionChat.models.MessagesStateUI
@@ -49,10 +49,18 @@ fun InitialWelcomeScreen(
     modifier: Modifier = Modifier
 ) {
 
-    WindowScaffold(modifier = modifier.fillMaxSize()) {
-        WelcomeSlidebar(
-            modifier = Modifier.relative(SLIDEBAR)
-        )
+    WindowScaffold(
+        modifier = modifier.fillMaxSize(),
+        slidebarContent = { isVisible ->
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
+                exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start)
+            ) {
+                WelcomeSlidebar()
+            }
+        }) {
+
 
         Box(
             modifier = Modifier
