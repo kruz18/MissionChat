@@ -31,7 +31,6 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ru.kyamshanov.missionChat.components.glassmorphism
 
 // Mock Data Models
 private data class TopicUiModel(
@@ -86,85 +85,73 @@ fun WelcomeSlidebar(
             ChatUiModel("5", "Ideas 2023", Icons.Default.Archive)
         )
     }
-
-    Box(
-        modifier = modifier
-            .glassmorphism(
-                shape = RoundedCornerShape(24.dp),
-                backgroundColor = MaterialTheme.colorScheme.surface,
-            )
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
+    Column(modifier = modifier) {
+        // Scrollable Content Area
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            // Scrollable Content Area
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(vertical = 8.dp)
-            ) {
-                // Active Chats Section
-                item {
-                    CollapsibleSectionHeader(
-                        title = "Active chats",
-                        isExpanded = isActiveExpanded,
-                        onToggle = { isActiveExpanded = !isActiveExpanded }
+            // Active Chats Section
+            item {
+                CollapsibleSectionHeader(
+                    title = "Active chats",
+                    isExpanded = isActiveExpanded,
+                    onToggle = { isActiveExpanded = !isActiveExpanded }
+                )
+            }
+
+            items(activeChats, key = { it.id }) { chat ->
+                AnimatedVisibility(
+                    visible = isActiveExpanded,
+                    enter = fadeIn(animationSpec = tween(200)) + expandVertically(animationSpec = tween(300)),
+                    exit = fadeOut(animationSpec = tween(200)) + shrinkVertically(animationSpec = tween(300))
+                ) {
+                    SidebarItem(
+                        chat = chat,
+                        isSelected = chat.id == selectedChatId,
+                        onClick = { selectedChatId = chat.id },
+                        onOpenAllTopics = { /* Handle opening all topics view */ },
+                        onArchive = {
+                            activeChats.remove(chat)
+                            archivedChats.add(chat)
+                        }
                     )
-                }
-
-                items(activeChats, key = { it.id }) { chat ->
-                    AnimatedVisibility(
-                        visible = isActiveExpanded,
-                        enter = fadeIn(animationSpec = tween(200)) + expandVertically(animationSpec = tween(300)),
-                        exit = fadeOut(animationSpec = tween(200)) + shrinkVertically(animationSpec = tween(300))
-                    ) {
-                        SidebarItem(
-                            chat = chat,
-                            isSelected = chat.id == selectedChatId,
-                            onClick = { selectedChatId = chat.id },
-                            onOpenAllTopics = { /* Handle opening all topics view */ },
-                            onArchive = {
-                                activeChats.remove(chat)
-                                archivedChats.add(chat)
-                            }
-                        )
-                    }
-                }
-
-                item { Spacer(Modifier.height(16.dp)) }
-
-                // Archive Section
-                item {
-                    CollapsibleSectionHeader(
-                        title = "Archive",
-                        isExpanded = isArchiveExpanded,
-                        onToggle = { isArchiveExpanded = !isArchiveExpanded }
-                    )
-                }
-
-                items(archivedChats, key = { it.id }) { chat ->
-                    AnimatedVisibility(
-                        visible = isArchiveExpanded,
-                        enter = fadeIn(animationSpec = tween(200)) + expandVertically(animationSpec = tween(300)),
-                        exit = fadeOut(animationSpec = tween(200)) + shrinkVertically(animationSpec = tween(300))
-                    ) {
-                        SidebarItem(
-                            chat = chat,
-                            isSelected = chat.id == selectedChatId,
-                            onClick = { selectedChatId = chat.id },
-                            onDelete = { archivedChats.remove(chat) },
-                            onUnarchive = {
-                                archivedChats.remove(chat)
-                                activeChats.add(chat)
-                            }
-                        )
-                    }
                 }
             }
 
-            // Profile Section (Fixed at bottom)
-            ProfileSection()
+            item { Spacer(Modifier.height(16.dp)) }
+
+            // Archive Section
+            item {
+                CollapsibleSectionHeader(
+                    title = "Archive",
+                    isExpanded = isArchiveExpanded,
+                    onToggle = { isArchiveExpanded = !isArchiveExpanded }
+                )
+            }
+
+            items(archivedChats, key = { it.id }) { chat ->
+                AnimatedVisibility(
+                    visible = isArchiveExpanded,
+                    enter = fadeIn(animationSpec = tween(200)) + expandVertically(animationSpec = tween(300)),
+                    exit = fadeOut(animationSpec = tween(200)) + shrinkVertically(animationSpec = tween(300))
+                ) {
+                    SidebarItem(
+                        chat = chat,
+                        isSelected = chat.id == selectedChatId,
+                        onClick = { selectedChatId = chat.id },
+                        onDelete = { archivedChats.remove(chat) },
+                        onUnarchive = {
+                            archivedChats.remove(chat)
+                            activeChats.add(chat)
+                        }
+                    )
+                }
+            }
         }
+
+        // Profile Section (Fixed at bottom)
+        ProfileSection()
     }
 }
 
